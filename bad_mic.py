@@ -7,13 +7,15 @@ from PyQt6.QtCore import Qt, QTimer
 import random
 import threading
 import time
+from pydub import AudioSegment
+import pyaudio
 
 def time_worker():
     while True:
         time.sleep(5)  # 每 5 秒執行一次
         timemode = random.randint(0, 1)
         gain = 10 if timemode == 1 else 0
-        # print(f"隨機更新 Gain: {gain}")
+        print(f"隨機更新 Gain: {gain}")
         # 如果需要更新 GUI，請使用信號或其他方式與主執行緒通信
 
 # 啟動執行緒
@@ -111,11 +113,9 @@ class MainWindow(QWidget):
 
     def audio_callback(self, indata, outdata, frames, time, status):
         if status:
-            print(status)  # 如果有狀態錯誤，輸出錯誤資訊
+            print(status)
         try:
-            # 直接處理原始音訊，避免降採樣
             processed_data = indata * self.gain
-            # 確保形狀匹配
             outdata[:] = processed_data
         except Exception as e:
             print(f"音訊處理錯誤: {e}")
@@ -126,13 +126,12 @@ class MainWindow(QWidget):
             input_device = self.input_combo.currentData()
             output_device = self.output_combo.currentData()
             
-            # 使用預設裝置
             if input_device == -1:
                 input_device = sd.default.device[0]
             if output_device == -1:
                 output_device = sd.default.device[1]
 
-            # 確認裝置是否可用
+
             try:
                 input_info = sd.query_devices(input_device)
                 output_info = sd.query_devices(output_device)
@@ -140,12 +139,11 @@ class MainWindow(QWidget):
                 print(f"無法查詢裝置資訊: {e}")
                 return
 
-            # 使用較小的緩衝區大小
-            blocksize = 1024
+            blocksize = 512
             
             self.stream = sd.Stream(
                 device=(input_device, output_device),
-                samplerate=44100,
+                samplerate=4000,
                 channels=(1, 1),
                 callback=self.audio_callback,
                 dtype=np.float32,
@@ -170,7 +168,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, event):
         self.stop_audio()
-        self.save_settings()  # 關閉程式時儲存
+        self.save_settings()
         event.accept()
 
     def time_setting(self):
@@ -178,8 +176,13 @@ class MainWindow(QWidget):
         return 10 if timemode == 1 else 0
 
 def bad_mic_start():
-    app = QApplication(sys.argv)
-    window = MainWindow()
+    def run_gui():
+        window = MainWindow()
+        window.show()
     
-    window.show()
-    sys.exit(app.exec())
+    if not QApplication.instance():
+        app = QApplication([])
+        run_gui()
+        app.exec()
+    else:
+        run_gui()

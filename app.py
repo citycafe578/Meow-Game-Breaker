@@ -2,5 +2,6 @@ import random
 import os
 import time
 import sys
-import super_idol, meow, bad_mic, random_song 
-meow.meow_start()
+import  meow, bad_mic, random_song 
+
+bad_mic.bad_mic_start()
