@@ -1,4 +1,4 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk
 import sounddevice as sd
 import numpy as np
@@ -17,7 +17,7 @@ class AudioApp:
 
         self.input_devices = [device['name'] for device in sd.query_devices() if device['max_input_channels'] > 0]
         self.output_devices = [device['name'] for device in sd.query_devices() if device['max_output_channels'] > 0]
-        self.gain_db = tk.DoubleVar(value=0)
+        self.gain_db = ctk.DoubleVar(value=0)
         self.stream = None
         self.is_streaming = False  # 狀態變數
         self.talk_key = None  # 綁定的按鍵
@@ -25,33 +25,33 @@ class AudioApp:
         self.create_widgets()
 
     def create_widgets(self):
-        tk.Label(self.root, text="輸入裝置:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        self.input_device_combo = ttk.Combobox(self.root, values=self.input_devices, state="readonly")
+        ctk.CTkLabel(self.root, text="輸入裝置:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        self.input_device_combo = ctk.CTkComboBox(self.root, values=self.input_devices, state="readonly")
         self.input_device_combo.grid(row=0, column=1, padx=10, pady=10)
-        self.input_device_combo.current(0)
+        self.input_device_combo.set(self.input_devices[0])
 
-        tk.Label(self.root, text="輸出裝置:").grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.output_device_combo = ttk.Combobox(self.root, values=self.output_devices, state="readonly")
+        ctk.CTkLabel(self.root, text="輸出裝置:").grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        self.output_device_combo = ctk.CTkComboBox(self.root, values=self.output_devices, state="readonly")
         self.output_device_combo.grid(row=1, column=1, padx=10, pady=10)
-        self.output_device_combo.current(0)
+        self.output_device_combo.set(self.output_devices[0])
 
         # 增益調整拉桿
-        tk.Label(self.root, text="增益 (dB):").grid(row=2, column=0, padx=10, pady=10, sticky="w")
-        self.gain_slider = tk.Scale(self.root, from_=-20, to=50, resolution=0.1, orient="horizontal", variable=self.gain_db)
+        ctk.CTkLabel(self.root, text="增益 (dB):").grid(row=2, column=0, padx=10, pady=10, sticky="w")
+        self.gain_slider = ctk.CTkSlider(self.root, from_=-20, to=50, number_of_steps=700, variable=self.gain_db)
         self.gain_slider.grid(row=2, column=1, padx=10, pady=10)
         
         # 按鍵綁定
-        tk.Label(self.root, text="按鍵綁定:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(self.root, text="按鍵綁定:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
         self.keybind_combo = ttk.Combobox(self.root, values=self.key_options, state="readonly")  # 下拉式選單
         self.keybind_combo.grid(row=3, column=1, padx=10, pady=10)
         self.keybind_combo.current(0)  # 預設選擇第一個按鍵
 
         # 開始/停止按鈕
-        self.toggle_button = tk.Button(self.root, text="開始", command=self.toggle_audio_stream)
+        self.toggle_button = ctk.CTkButton(self.root, text="開始", command=self.toggle_audio_stream)
         self.toggle_button.grid(row=4, column=0, columnspan=2, pady=10)
 
         # 離開按鈕
-        self.exit_button = tk.Button(self.root, text="離開", command=self.root.quit)
+        self.exit_button = ctk.CTkButton(self.root, text="離開", command=self.root.quit)
         self.exit_button.grid(row=5, column=0, columnspan=2, pady=10)
 
     def apply_distortion(self, audio_data, gain=1.0, threshold=0.5):
@@ -129,7 +129,7 @@ class AudioApp:
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ctk.CTk()
     app = AudioApp(root)
 
     audio_manager = AudioManager()  # 創建 AudioManager 實例
