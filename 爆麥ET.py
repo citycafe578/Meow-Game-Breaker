@@ -3,15 +3,35 @@ import numpy as np
 import sys
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, 
                             QLabel, QSlider, QComboBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
+import random
+import threading
+import time
+
+def time_worker():
+    while True:
+        time.sleep(5)  # 每 5 秒執行一次
+        timemode = random.randint(0, 1)
+        gain = 10 if timemode == 1 else 0
+        print(f"隨機更新 Gain: {gain}")
+        # 如果需要更新 GUI，請使用信號或其他方式與主執行緒通信
+
+# 啟動執行緒
+time_thread = threading.Thread(target=time_worker, daemon=True)
+time_thread.start()
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.gain = 2.0
+        self.gain = 5.0
         self.stream = None
         self.devices = self.get_devices()  # 改為獲取所有裝置
         self.initUI()
+
+        # 啟動 QTimer，每 5 秒更新一次 gain
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_gain_randomly)
+        self.timer.start(2500)  # 每 5000 毫秒（5 秒）觸發一次
 
     def get_devices(self):
         input_devices = []
@@ -81,34 +101,17 @@ class MainWindow(QWidget):
         self.setLayout(layout)
 
     def update_gain(self):
-        self.gain = self.slider.value() / 10.0
+        # self.gain = self.slider.value() / 10.0
+        self.gain = self.time_setting()
+        self.label.setText(f"Gain: {self.gain}")
+
+    def update_gain_randomly(self):
+        self.gain = self.time_setting()
         self.label.setText(f"Gain: {self.gain}")
 
     def audio_callback(self, indata, outdata, frames, time, status):
         if status:
-        self.slider.setValue(int(self.gain * 10))  # Convert gain value to slider value
-        self.slider.valueChanged.connect(self.update_gain)
-        layout.addWidget(self.slider)
-
-        self.start_button = QPushButton("Start", self)
-        self.start_button.clicked.connect(self.start_audio)
-        layout.addWidget(self.start_button)
-
-        self.stop_button = QPushButton("Stop", self)
-        self.stop_button.clicked.connect(self.stop_audio)
-        self.stop_button.setEnabled(False)  # Initially disable stop button
-        layout.addWidget(self.stop_button)
-
-        self.setLayout(layout)
-
-    def update_gain(self):
-        self.gain = self.slider.value() / 10.0
-        self.label.setText(f"Gain: {self.gain}")
-        self.save_settings()  # 當增益值改變時儲存
-
-    def audio_callback(self, indata, outdata, frames, time, status):
-        if status:
-            print(status)
+            print(status)  # 如果有狀態錯誤，輸出錯誤資訊
         try:
             # 直接處理原始音訊，避免降採樣
             processed_data = indata * self.gain
@@ -170,8 +173,13 @@ class MainWindow(QWidget):
         self.save_settings()  # 關閉程式時儲存
         event.accept()
 
+    def time_setting(self):
+        timemode = random.randint(0, 1)
+        return 10 if timemode == 1 else 0
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
+    
     window.show()
     sys.exit(app.exec())
