@@ -10,7 +10,7 @@ RATE = 44100
 CHUNK = 1024
 SILENCE_THRESHOLD = 8000  # 靜音判定閾值（越低越敏感）
 SILENCE_DURATION = 0.75  # 多少秒靜音判斷為講話結束
-MP3_FILE = "NEW!!!!!/sounds/meow.mp3"  # 替換為你的音檔
+MP3_FILE = "NEW!!!!!/sounds/3.mp3"  # 替換為你的音檔
 
 def is_speaking(audio_data):
     volume = np.abs(audio_data).mean()
