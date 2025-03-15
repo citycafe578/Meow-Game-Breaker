@@ -29,11 +29,12 @@ def detect_word_from_mic(target_words=["蘇", "書", "酥", "甦", "輸", "舒",
                 print(f"發生錯誤: {e}")
         if recognized:
             pygame.mixer.init()
-            pygame.mixer.music.load("sounds/super-idol-de-xiao-rong-du-mei-ni-de-tian.mp3")
+            pygame.mixer.music.load("sounds/super.mp3")
             pygame.mixer.music.set_volume(0.8)
             pygame.mixer.music.play()
 
             while pygame.mixer.music.get_busy():
                 time.sleep(1)
 
-detect_word_from_mic(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"])
+def start_super():
+    detect_word_from_mic(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"])

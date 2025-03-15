@@ -36,4 +36,5 @@ def play_mp3_to_virtual_device(mp3_file, device_name):
     p.terminate()
     print("播放完成")
 
-play_mp3_to_virtual_device("sounds/super.mp3", VIRTUAL_AUDIO_DEVICE_NAME)
+def random_song_start():
+    play_mp3_to_virtual_device("sounds/super.mp3", VIRTUAL_AUDIO_DEVICE_NAME)

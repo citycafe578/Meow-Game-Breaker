@@ -9,8 +9,8 @@ CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 SILENCE_THRESHOLD = 5600  # 靜音判定閾值（越低越敏感）
-SILENCE_DURATION = 0.6  # 多少秒靜音判斷為講話結束
-MP3_FILE = "meow.mp3"  # 替換為你的音檔
+SILENCE_DURATION = 0.65  # 多少秒靜音判斷為講話結束
+MP3_FILE = "sounds/meow.wav"  # 替換為你的音檔
 
 def is_speaking(audio_data):
     volume = np.abs(np.frombuffer(audio_data, dtype=np.int16)).mean()
@@ -50,5 +50,6 @@ def main():
     stream.close()
     p.terminate()
 
-if __name__ == "__main__":
-    main()
+def meow_start():
+    # if __name__ == "__main__":
+        main()
