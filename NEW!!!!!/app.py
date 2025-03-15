@@ -3,6 +3,8 @@ from tkinter import ttk
 import sounddevice as sd
 import numpy as np
 from audio_utils import adjust_gain
+import su
+import threading
 
 class AudioApp:
     def __init__(self, root):
@@ -78,7 +80,7 @@ class AudioApp:
         try:
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=44100,
+                samplerate=4000,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
@@ -98,7 +100,18 @@ class AudioApp:
             self.stream = None
             print("音訊串流已停止")
 
+def run_super():
+    su.start_super()
+
 if __name__ == "__main__":
+    # 建立兩個執行緒
     root = tk.Tk()
     app = AudioApp(root)
+    
+    # 建立並啟動 super 執行緒
+    super_thread = threading.Thread(target=run_super)
+    super_thread.daemon = True  # 設為守護執行緒，主程式結束時會自動結束
+    super_thread.start()
+    
+    # 啟動主視窗
     root.mainloop()
