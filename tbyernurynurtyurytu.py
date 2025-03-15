@@ -3,7 +3,7 @@ import numpy as np
 import sys
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, 
                             QLabel, QSlider, QComboBox)
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer
 import random
 import threading
 import time
@@ -22,16 +22,6 @@ def time_worker():
 time_thread = threading.Thread(target=time_worker, daemon=True)
 time_thread.start()
 
-class WorkerThread(QThread):
-    update_signal = pyqtSignal(str)
-
-    def run(self):
-        # 在這裡執行非 GUI 的邏輯
-        import time
-        for i in range(5):
-            self.update_signal.emit(f"更新訊息 {i}")
-            time.sleep(1)
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -44,11 +34,6 @@ class MainWindow(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_gain_randomly)
         self.timer.start(2500)  # 每 5000 毫秒（5 秒）觸發一次
-
-        # 啟動執行緒
-        self.thread = WorkerThread()
-        self.thread.update_signal.connect(self.update_label)
-        self.thread.start()
 
     def get_devices(self):
         input_devices = []
@@ -126,9 +111,6 @@ class MainWindow(QWidget):
         self.gain = self.time_setting()
         self.label.setText(f"Gain: {self.gain}")
 
-    def update_label(self, text):
-        self.label.setText(text)
-
     def audio_callback(self, indata, outdata, frames, time, status):
         if status:
             print(status)
@@ -193,37 +175,9 @@ class MainWindow(QWidget):
         timemode = random.randint(0, 1)
         return 10 if timemode == 1 else 0
 
-class BadMicThread(QThread):
-    def __init__(self):
-        super().__init__()
-        self.app = None
-        self.window = None
-
-    def run(self):
-        # 啟動 PyQt 的事件迴圈
-        self.app = QApplication.instance() or QApplication([])
-        self.window = MainWindow()
-        self.window.show()
-        self.app.exec()
-
 def bad_mic_start():
-    thread = BadMicThread()
-    thread.start()
-    return thread
-
-def start_function(self, name, func):
-    if name not in self.running or not self.running[name]:
-        if name == "bad_mic":
-            # 啟動 bad_mic 的 GUI 執行緒
-            thread = func()
-            self.threads[name] = thread
-            self.running[name] = True
-        else:
-            # 其他功能可以放入執行緒中運行
-            thread = threading.Thread(target=func, daemon=True)
-            self.threads[name] = thread
-            self.running[name] = True
-            thread.start()
-        print(f"{name} 已啟動")
-    else:
-        print(f"{name} 已在運行中")
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    
+    window.show()
+    sys.exit(app.exec())

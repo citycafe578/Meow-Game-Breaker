@@ -30,9 +30,10 @@ class AudioSystem:
     def start_function(self, name, func):
         if name not in self.running or not self.running[name]:
             if name == "bad_mic":
-                # 特殊處理 bad_mic，確保在主執行緒運行
+                # 確保 bad_mic 的 GUI 在主執行緒中運行
                 func()
             else:
+                # 其他功能可以放入執行緒中運行
                 thread = threading.Thread(target=func, daemon=True)
                 self.threads[name] = thread
                 self.running[name] = True
@@ -56,7 +57,7 @@ def show_menu():
         print("1. 開始 Super idol 偵測器")
         print("2. 開始喵喵回應器")
         print("3. 開始麥克風干擾器")
-        print("4. 開始虛擬音9訊輸出")
+        print("4. 開始虛擬音訊輸出")
         print("5. 停止 Super idol 偵測器")
         print("6. 停止喵喵回應器")
         print("7. 停止麥克風干擾器")
@@ -70,10 +71,10 @@ def show_menu():
         try:
             if choice == "9":
                 print("正在啟動所有功能...")
-                audio_system.start_function("super_idol", super_idol.start_super())
-                audio_system.start_function("meow", meow.meow_start())
-                audio_system.start_function("bad_mic", bad_mic.bad_mic_start())
-                audio_system.start_function("virtual_out", random_song.random_song_start())
+                audio_system.start_function("super_idol", super_idol.start_super)
+                audio_system.start_function("meow", meow.meow_start)
+                audio_system.start_function("bad_mic", bad_mic.bad_mic_start)
+                audio_system.start_function("virtual_out", random_song.play_mp3)
             elif choice == "10":
                 print("正在停止所有功能...")
                 audio_system.stop_function("super_idol")
@@ -88,13 +89,13 @@ def show_menu():
             else:
                 # 原有的選項處理邏輯
                 if choice == "1":
-                    audio_system.start_function("super_idol", super_idol.start_super())
+                    audio_system.start_function("super_idol", super_idol.start_super)
                 elif choice == "2":
-                    audio_system.start_function("meow", meow.meow_start())
+                    audio_system.start_function("meow", meow.meow_start)
                 elif choice == "3":
-                    audio_system.start_function("bad_mic", bad_mic.bad_mic_start())
+                    audio_system.start_function("bad_mic", bad_mic.bad_mic_start)
                 elif choice == "4":
-                    audio_system.start_function("virtual_out", random_song.random_song_start())
+                    audio_system.start_function("virtual_out", random_song.play_mp3)
                 elif choice == "5":
                     audio_system.stop_function("super_idol")
                 elif choice == "6":
