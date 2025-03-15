@@ -1,62 +1,72 @@
 import pyaudio
 import numpy as np
-import soundfile as sf
+from pydub import AudioSegment
+from pydub.playback import play
 import threading
 
-# 🔹 設定參數
-MIC_DEVICE_INDEX = 1  # 你的麥克風裝置索引 (可用 pyaudio.list_devices() 找)
-VIRTUAL_CABLE_INDEX = 2  # 你的虛擬音訊裝置 (CABLE Input)
-CHUNK = 1024
-RATE = 44100  # 取樣率
-CHANNELS = 1
+# 設定參數
+FORMAT = pyaudio.paInt16  # 16-bit 音訊格式
+CHANNELS = 1             # 單聲道
+RATE = 44100             # 取樣率 (44.1 kHz)
+CHUNK = 1024             # 每次讀取的音訊塊大小
 
-# 🔹 初始化 PyAudio
-p = pyaudio.PyAudio()
+# 載入 MP3 音樂
+music = AudioSegment.from_file("sounds/Voicy_Rickroll.mp3")
+music = music.set_frame_rate(RATE).set_channels(CHANNELS)
 
-# 🔹 開啟麥克風輸入
-mic_stream = p.open(
-    format=pyaudio.paInt16,
-    channels=CHANNELS,
-    rate=RATE,
-    input=True,
-    input_device_index=MIC_DEVICE_INDEX,
-    frames_per_buffer=CHUNK,
-)
+# 初始化 PyAudio
+audio = pyaudio.PyAudio()
 
-# 🔹 開啟虛擬音訊輸出
-output_stream = p.open(
-    format=pyaudio.paInt16,
-    channels=CHANNELS,
-    rate=RATE,
-    output=True,
-    output_device_index=VIRTUAL_CABLE_INDEX,
-    frames_per_buffer=CHUNK,
-)
+# 開啟麥克風錄製流
+mic_stream = audio.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK)
 
-# 🔹 載入 MP3 檔案
-audio_data, samplerate = sf.read("sounds/Voicy_Rickroll.mp3", dtype="int16")
-audio_index = 0
+# 開啟音訊播放流
+output_stream = audio.open(format=FORMAT,
+                           channels=CHANNELS,
+                           rate=RATE,
+                           output=True)
 
-# 🔹 音訊處理函數
-def audio_mixer():
-    global audio_index
+# 混音函數
+def mix_audio():
+    global music
+    music_index = 0
+    music_data = np.array(music.get_array_of_samples(), dtype=np.int16)
+
     while True:
-        # 讀取麥克風數據
-        mic_data = np.frombuffer(mic_stream.read(CHUNK, exception_on_overflow=False), dtype=np.int16)
+        # 從麥克風讀取音訊
+        mic_data = mic_stream.read(CHUNK)
+        mic_array = np.frombuffer(mic_data, dtype=np.int16)
 
-        # 讀取 MP3 音樂數據
-        if audio_index + CHUNK < len(audio_data):
-            music_data = audio_data[audio_index : audio_index + CHUNK]
-            audio_index += CHUNK
+        # 從音樂中提取對應的片段
+        if music_index + CHUNK < len(music_data):
+            music_chunk = music_data[music_index:music_index + CHUNK]
+            music_index += CHUNK
         else:
-            music_data = np.zeros(CHUNK, dtype=np.int16)  # 若音樂播放完，填充空白音訊
+            music_chunk = np.zeros(CHUNK, dtype=np.int16)  # 音樂結束後填充空白
 
-        # **混音 (50% 麥克風 + 50% 音樂)**
-        mixed_audio = (mic_data * 0.5 + music_data * 0.5).astype(np.int16)
+        # 混音 (50% 麥克風 + 50% 音樂)
+        mixed_audio = (mic_array * 0.5 + music_chunk * 0.5).astype(np.int16)
 
-        # 發送到虛擬音訊輸出
+        # 播放混音後的音訊
         output_stream.write(mixed_audio.tobytes())
 
-# 🔹 啟動混音執行緒
-mixer_thread = threading.Thread(target=audio_mixer)
-mixer_thread.start()
+# 啟動混音執行緒
+mix_thread = threading.Thread(target=mix_audio)
+mix_thread.start()
+
+print("音訊混音正在運行... 按下 Ctrl+C 停止")
+
+try:
+    while True:
+        pass  # 持續運行，直到使用者中斷程式
+except KeyboardInterrupt:
+    print("程式已停止")
+    mic_stream.stop_stream()
+    mic_stream.close()
+    output_stream.stop_stream()
+    output_stream.close()
+    audio.terminate()
