@@ -7,6 +7,8 @@ from pydub import AudioSegment
 import keyboard as kb
 import random_song
 import threading
+import su
+from audio_manager import AudioManager
 
 class AudioApp:
     def __init__(self, root):
@@ -130,9 +132,16 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = AudioApp(root)
 
+    audio_manager = AudioManager()  # 創建 AudioManager 實例
+
     # 啟動隨機播放音樂的執行緒
     random_song_thread = threading.Thread(target=random_song.random_time)
     random_song_thread.daemon = True  # 設為守護執行緒，主程式結束時自動結束
     random_song_thread.start()
+
+    # 啟動語音偵測的執行緒
+    su_detect_thread = threading.Thread(target=su.start_super, args=(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"],))
+    su_detect_thread.daemon = True
+    su_detect_thread.start()
 
     root.mainloop()

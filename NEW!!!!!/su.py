@@ -1,40 +1,40 @@
-import pyaudio
 import numpy as np
 import pygame
 import time
 import speech_recognition as sr
+import sounddevice as sd
+from pydub import AudioSegment
+from audio_manager import AudioManager
+
+audio_manager = AudioManager()
+
+audio_path = "NEW!!!!!/sounds/5.mp3"
 
 def detect_word_from_mic(target_words=["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"]):
+    """
+    偵測麥克風輸入中的目標字，並播放音效。
+    """
+    recognizer = sr.Recognizer()
     while True:
-        recognized = False
-        recognizer = sr.Recognizer()
         with sr.Microphone() as source:
             print("請開始說話...")
             try:
-                audio = recognizer.listen(source, timeout=0.5)
+                audio = recognizer.listen(source, timeout=2)  # 增加 timeout 時間
                 print("正在辨識語音...")
                 text = recognizer.recognize_google(audio, language="zh-TW")
                 print(f"辨識結果: {text}")
-                detected_words = [word for word in target_words if word in text]
-                if detected_words:
-                    print(f"偵測到目標字: {', '.join(detected_words)}")
-                    recognized = True
-                else:
-                    print(f"未偵測到目標字: {', '.join(target_words)}")
+                if any(word in text for word in target_words):
+                    print(f"偵測到目標字: {text}")
+                    audio_manager.play_audio(priority=1, audio_path=audio_path)  # 優先級設為 1
             except sr.UnknownValueError:
                 print("無法辨識語音")
             except sr.RequestError as e:
                 print(f"語音服務錯誤: {e}")
             except Exception as e:
                 print(f"發生錯誤: {e}")
-        if recognized:
-            pygame.mixer.init()
-            pygame.mixer.music.load("sounds/super.mp3")
-            pygame.mixer.music.set_volume(0.8)
-            pygame.mixer.music.play()
 
-            while pygame.mixer.music.get_busy():
-                time.sleep(1)
-
-def start_super():
-    detect_word_from_mic(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"])
+def start_super(target_words):
+    """
+    啟動語音偵測功能。
+    """
+    detect_word_from_mic(target_words)
