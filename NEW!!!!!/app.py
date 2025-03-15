@@ -120,11 +120,11 @@ class AudioApp:
     def toggle_audio_stream(self):
         if self.is_streaming:
             self.stop_audio_stream()
-            self.toggle_button.config(text="開始")
+            self.toggle_button.configure(text="開始")
         else:
             self.talk_key = self.keybind_combo.get()  # 獲取綁定的按鍵
             self.start_audio_stream()
-            self.toggle_button.config(text="停止")
+            self.toggle_button.configure(text="停止")
         self.is_streaming = not self.is_streaming
 
 
