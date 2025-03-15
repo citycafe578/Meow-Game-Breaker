@@ -6,6 +6,7 @@ from audio_utils import adjust_gain
 import su
 import threading
 
+
 class AudioApp:
     def __init__(self, root):
         self.root = root
@@ -76,11 +77,20 @@ class AudioApp:
             print(f"發生錯誤: {e}")
 
     def stop_audio_stream(self):
-        if self.stream:
+        if self.is_stream:
             self.stream.stop()
             self.stream.close()
             self.stream = None
             print("音訊串流已停止")
+
+    def toggle_audio_stream(self):
+        if self.is_streaming:
+            self.stop_audio_stream()
+            self.toggle_button.config(text="開始")
+        else:
+            self.start_audio_stream()
+            self.toggle_button.config(text="停止")
+        self.is_streaming = not self.is_streaming
 
 if __name__ == "__main__":
     # 建立兩個執行緒
@@ -88,9 +98,9 @@ if __name__ == "__main__":
     app = AudioApp(root)
     
     # 建立並啟動 super 執行緒
-    super_thread = threading.Thread(target=run_super)
-    super_thread.daemon = True  # 設為守護執行緒，主程式結束時會自動結束
-    super_thread.start()
+    #super_thread = threading.Thread(target=su.start_super())
+   # super_thread.daemon = True  # 設為守護執行緒，主程式結束時會自動結束
+   # super_thread.start()
     
     # 啟動主視窗
     root.mainloop()
