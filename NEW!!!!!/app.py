@@ -5,7 +5,8 @@ import numpy as np
 from audio_utils import adjust_gain
 import su
 import threading
-
+import meow
+from scipy.signal import lfilter
 
 class AudioApp:
     def __init__(self, root):
@@ -43,6 +44,14 @@ class AudioApp:
         self.exit_button = tk.Button(self.root, text="離開", command=self.root.quit)
         self.exit_button.grid(row=5, column=0, columnspan=2, pady=10)
 
+    def apply_distortion(self, audio_data, gain=1.0, threshold=0.5):
+        """
+        應用失真效果
+        """
+        audio_data = audio_data * gain
+        audio_data = np.clip(audio_data, -threshold, threshold)
+        return audio_data
+
     def audio_callback(self, indata, outdata, frames, time, status):
         """
         音訊處理回呼函式，用於即時調整增益並輸出音訊。
@@ -52,7 +61,9 @@ class AudioApp:
         # 調整增益
         audio_data = indata[:, 0]  # 單聲道處理
         adjusted_audio = adjust_gain(audio_data, self.gain_db.get())
-        outdata.fill(0)  # 將輸出設置為靜音
+        # 應用失真效果
+        distorted_audio = self.apply_distortion(adjusted_audio, gain=2.0, threshold=0.5)
+        outdata[:] = distorted_audio.reshape(-1, 1)  # 將調整後的音訊數據輸出
 
     def start_audio_stream(self):
         input_device = self.input_device_combo.get()
@@ -66,7 +77,7 @@ class AudioApp:
         try:
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=2000,
+                samplerate=1000,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
@@ -77,7 +88,7 @@ class AudioApp:
             print(f"發生錯誤: {e}")
 
     def stop_audio_stream(self):
-        if self.is_stream:
+        if self.stream:
             self.stream.stop()
             self.stream.close()
             self.stream = None
@@ -98,9 +109,12 @@ if __name__ == "__main__":
     app = AudioApp(root)
     
     # 建立並啟動 super 執行緒
-    #super_thread = threading.Thread(target=su.start_super())
-   # super_thread.daemon = True  # 設為守護執行緒，主程式結束時會自動結束
-   # super_thread.start()
+    #super_thread = threading.Thread(target=su.start_super)
+    #super_thread.daemon = True  # 設為守護執行緒，主程式結束時會自動結束
+    #super_thread.start()
+    # meow_thread = threading.Thread(target=meow.meow_start)
+    # meow_thread.daemon = True
+    # meow_thread.start()
     
     # 啟動主視窗
     root.mainloop()

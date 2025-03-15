@@ -1,58 +1,51 @@
-import pyaudio
+import sounddevice as sd
 import numpy as np
-import pygame
 import time
+from pydub import AudioSegment
 
 # 設定參數
-FORMAT = pyaudio.paInt16
+FORMAT = 'int16'
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 SILENCE_THRESHOLD = 8000  # 靜音判定閾值（越低越敏感）
 SILENCE_DURATION = 0.75  # 多少秒靜音判斷為講話結束
-MP3_FILE = "sounds/meow.mp3"  # 替換為你的音檔
+MP3_FILE = "NEW!!!!!/sounds/meow.mp3"  # 替換為你的音檔
 
 def is_speaking(audio_data):
-    volume = np.abs(np.frombuffer(audio_data, dtype=np.int16)).mean()
+    volume = np.abs(audio_data).mean()
     return volume > SILENCE_THRESHOLD
 
 def play_sound():
-    pygame.mixer.init()
-    pygame.mixer.music.load(MP3_FILE)
-    pygame.mixer.music.play()
-    time.sleep(1)  # 只播放 1 秒
-    pygame.mixer.music.stop()
+    audio = AudioSegment.from_file(MP3_FILE)
+    samples = np.array(audio.get_array_of_samples())
+    sd.play(samples, samplerate=audio.frame_rate)
+    sd.wait()
 
 def main():
-    p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, 
-                    input=True, frames_per_buffer=CHUNK)
-    
-    silent_time = 0
-    was_speaking = False
-    
-    print("Listening...")
-    while True:
-        audio_data = stream.read(CHUNK, exception_on_overflow=False)
-        if is_speaking(audio_data):
+    def callback(indata, frames, time, status):
+        nonlocal silent_time, was_speaking
+        if status:
+            print(status)
+        if is_speaking(indata):
             was_speaking = True
             silent_time = 0
         else:
             if was_speaking:
-                silent_time += CHUNK / RATE
+                silent_time += frames / RATE
                 if silent_time >= SILENCE_DURATION:
                     print("Speech ended, playing sound...")
                     play_sound()
-                    was_speaking = False  # 確保只播放一次
+                    was_speaking = False
                     silent_time = 0
-    
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+
+    silent_time = 0
+    was_speaking = False
+
+    with sd.InputStream(channels=CHANNELS, callback=callback, blocksize=CHUNK, samplerate=RATE):
+        print("Listening...")
+        while True:
+            time.sleep(0.1)
 
 def meow_start():
-    # if __name__ == "__main__":
     main()
-
-# if __name__ == "__main__":
-#     main()

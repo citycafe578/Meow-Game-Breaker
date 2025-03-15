@@ -1,8 +1,8 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton
 from bad_mic import bad_mic_start
-from meow import meow_start  # 假設有此檔案
-from super_idol import start_super  # 假設有此檔案
+from meow import meow_start
+from super_idol import start_super
 
 class MainWindow(QMainWindow):
     def __init__(self):
