@@ -15,7 +15,7 @@ def time_worker():
         time.sleep(5)  # 每 5 秒執行一次
         timemode = random.randint(0, 1)
         gain = 10 if timemode == 1 else 0
-        print(f"隨機更新 Gain: {gain}")
+        # print(f"隨機更新 Gain: {gain}")
         # 如果需要更新 GUI，請使用信號或其他方式與主執行緒通信
 
 # 啟動執行緒
@@ -168,7 +168,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, event):
         self.stop_audio()
-        self.save_settings()
+        self.time_settings()
         event.accept()
 
     def time_setting(self):
@@ -176,13 +176,10 @@ class MainWindow(QWidget):
         return 10 if timemode == 1 else 0
 
 def bad_mic_start():
-    def run_gui():
-        window = MainWindow()
-        window.show()
-    
-    if not QApplication.instance():
-        app = QApplication([])
-        run_gui()
-        app.exec()
-    else:
-        run_gui()
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec()
+
+# if __name__ == "__main__":
+#     bad_mic_start()

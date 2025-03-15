@@ -42,4 +42,7 @@ def play_mp3_to_virtual_device(mp3_file, device_name):
     p.terminate()
 
 # 播放 MP3 文件
-play_mp3_to_virtual_device("sounds/super.mp3", VIRTUAL_AUDIO_DEVICE_NAME)
+def play_mp3(mp3_file):
+    audio = AudioSegment.from_file(mp3_file)
+    play(audio)
+# play_mp3_to_virtual_device("sounds/super.mp3", VIRTUAL_AUDIO_DEVICE_NAME)
