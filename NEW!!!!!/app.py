@@ -100,7 +100,7 @@ class AudioApp:
         try:
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=44100,
+                samplerate=4000,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
