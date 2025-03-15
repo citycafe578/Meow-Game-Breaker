@@ -11,7 +11,7 @@ def detect_word_from_mic(target_words=["蘇", "書", "酥", "甦", "輸", "舒",
         with sr.Microphone() as source:
             print("請開始說話...")
             try:
-                audio = recognizer.listen(source, timeout=3)
+                audio = recognizer.listen(source, timeout=0.5)
                 print("正在辨識語音...")
                 text = recognizer.recognize_google(audio, language="zh-TW")
                 print(f"辨識結果: {text}")
