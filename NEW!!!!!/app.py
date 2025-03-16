@@ -160,7 +160,12 @@ if __name__ == "__main__":
 
     # 啟動 meow 檢測的執行緒
     meow_thread = threading.Thread(target=meow.meow_start)
-    meow_thread.daemon = True  # 設為守護執行緒，主程式結束時自動結束
+    meow_thread.daemon = True
     meow_thread.start()
+
+    # 啟動隨機播放音樂的執行緒
+    random_song_thread = threading.Thread(target=random_song.random_time)
+    random_song_thread.daemon = True
+    random_song_thread.start()
 
     root.mainloop()
