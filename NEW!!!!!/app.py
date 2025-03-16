@@ -104,7 +104,7 @@ class AudioApp:
         # 播放音效（若佇列有音效）
         if not self.sound_queue.empty():
             sound_audio = self.sound_queue.get()
-            # 確保音效長度與 frames 一致
+            # 碮保音效長度與 frames 一致
             if len(sound_audio) < len(mic_audio):
                 sound_audio = np.pad(sound_audio, (0, len(mic_audio) - len(sound_audio)), mode='constant')
             elif len(sound_audio) > len(mic_audio):
@@ -136,14 +136,9 @@ class AudioApp:
         output_device_index = next(i for i, d in enumerate(sd.query_devices()) if d['name'] == output_device)
 
         try:
-            # 使用音訊檔案的取樣率
-            audio_path = "NEW!!!!!/sounds/1.mp3"  # 假設音訊檔案的取樣率是固定的
-            audio = AudioSegment.from_file(audio_path)
-            sample_rate = audio.frame_rate
-
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=sample_rate,
+                samplerate=4000,  # 麥克風輸入的取樣率
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
