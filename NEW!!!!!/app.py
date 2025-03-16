@@ -9,6 +9,8 @@ import random_song
 import threading
 import su
 from audio_manager import AudioManager
+import queue
+import os
 
 class AudioApp:
     def __init__(self, root):
@@ -22,6 +24,9 @@ class AudioApp:
         self.is_streaming = False  # 狀態變數
         self.talk_key = None  # 綁定的按鍵
         self.key_options = [chr(i) for i in range(97, 123)]  # a-z
+        self.was_talking = False  # 是否正在說話
+        self.sound_queue = queue.Queue()  # 儲存音效數據
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -39,7 +44,7 @@ class AudioApp:
         ctk.CTkLabel(self.root, text="增益 (dB):").grid(row=2, column=0, padx=10, pady=10, sticky="w")
         self.gain_slider = ctk.CTkSlider(self.root, from_=-20, to=50, number_of_steps=700, variable=self.gain_db)
         self.gain_slider.grid(row=2, column=1, padx=10, pady=10)
-        
+
         # 按鍵綁定
         ctk.CTkLabel(self.root, text="按鍵綁定:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
         self.keybind_combo = ttk.Combobox(self.root, values=self.key_options, state="readonly")  # 下拉式選單
@@ -54,59 +59,81 @@ class AudioApp:
         self.exit_button = ctk.CTkButton(self.root, text="離開", command=self.root.quit)
         self.exit_button.grid(row=5, column=0, columnspan=2, pady=10)
 
-    def apply_distortion(self, audio_data, gain=1.0, threshold=0.5):
-        """
-        應用失真效果
-        """
+    def apply_distortion(self, audio_data, gain=3.0, threshold=0.3):
+        """ 應用失真效果 """
         audio_data = audio_data * gain
-        audio_data = np.clip(audio_data, -threshold, threshold)
-        return audio_data
+        return np.clip(audio_data, -threshold, threshold)
 
-    def play_sound(self):
-        audio = AudioSegment.from_file("NEW!!!!!/sounds/meow.mp3")
-        samples = np.array(audio.get_array_of_samples())
-        sd.play(samples, samplerate=audio.frame_rate)
-        sd.wait()
+    def play_sound(self, file_path):
+        """ 播放音效並加入音訊串流 """
+        if not os.path.exists(file_path):
+            print(f"錯誤: 找不到音效檔案 {file_path}")
+            return
+
+        audio = AudioSegment.from_file(file_path)
+        samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+        self.sound_queue.put(samples)  # 將音效加入佇列
+        sd.play(samples, samplerate=audio.frame_rate)  # 在本地播放音效
 
     def audio_callback(self, indata, outdata, frames, time, status):
-        """
-        音訊處理回呼函式，用於即時調整增益並輸出音訊。
-        """
+        """ 音訊處理回呼函式，合併麥克風輸入與音效 """
         if status:
             print(f"狀態錯誤: {status}")
-        
-        # 偵測是否按下 talk_key
-        if self.talk_key and kb.is_pressed(self.talk_key):
-            print("按下 talk_key")
-            # 調整增益
-            audio_data = indata[:, 0]  # 單聲道處理
-            adjusted_audio = adjust_gain(audio_data, self.gain_db.get())
-            # 應用失真效果
-            distorted_audio = self.apply_distortion(adjusted_audio, gain=2.0, threshold=0.5)
-            outdata[:] = distorted_audio.reshape(-1, 1)
+
+        # 處理麥克風輸入
+        mic_audio = indata[:, 0]  # 單聲道
+        mic_audio = adjust_gain(mic_audio, self.gain_db.get())
+        mic_audio = self.apply_distortion(mic_audio)
+
+        # 播放音效（若佇列有音效）
+        if not self.sound_queue.empty():
+            sound_audio = self.sound_queue.get()
+            # 確保音效長度與 frames 一致
+            if len(sound_audio) < len(mic_audio):
+                sound_audio = np.pad(sound_audio, (0, len(mic_audio) - len(sound_audio)), mode='constant')
+            elif len(sound_audio) > len(mic_audio):
+                sound_audio = sound_audio[:len(mic_audio)]
         else:
-            # 如果按鍵未按下，將輸出設為靜音
-            outdata.fill(0)
+            sound_audio = np.zeros_like(mic_audio)
+
+        # 合併麥克風音訊與音效
+        combined_audio = mic_audio + sound_audio
+        combined_audio = np.clip(combined_audio, -1.0, 1.0)  # 避免溢出
+
+        outdata[:] = combined_audio.reshape(-1, 1)
+
+    def on_key_pressed(self):
+        """ 當綁定按鍵被按下時 """
+        self.was_talking = True
+
+    def on_key_released(self):
+        """ 當綁定按鍵被放開時，播放音效 """
+        if self.was_talking:
+            self.was_talking = False
+            self.play_sound("NEW!!!!!/sounds/3.mp3")
 
     def start_audio_stream(self):
         input_device = self.input_device_combo.get()
         output_device = self.output_device_combo.get()
 
-        # 找到裝置索引
         input_device_index = next(i for i, d in enumerate(sd.query_devices()) if d['name'] == input_device)
         output_device_index = next(i for i, d in enumerate(sd.query_devices()) if d['name'] == output_device)
 
-        # 開啟音訊串流
         try:
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=4000,
+                samplerate=44100,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
             )
             self.stream.start()
             print("音訊串流已啟動")
+
+            self.talk_key = self.keybind_combo.get()
+            kb.add_hotkey(self.talk_key, self.on_key_pressed)
+            kb.add_hotkey(self.talk_key, self.on_key_released, trigger_on_release=True)
+
         except Exception as e:
             print(f"發生錯誤: {e}")
 
@@ -122,26 +149,11 @@ class AudioApp:
             self.stop_audio_stream()
             self.toggle_button.configure(text="開始")
         else:
-            self.talk_key = self.keybind_combo.get()  # 獲取綁定的按鍵
             self.start_audio_stream()
             self.toggle_button.configure(text="停止")
         self.is_streaming = not self.is_streaming
 
-
 if __name__ == "__main__":
     root = ctk.CTk()
     app = AudioApp(root)
-
-    audio_manager = AudioManager()  # 創建 AudioManager 實例
-
-    # 啟動隨機播放音樂的執行緒
-    random_song_thread = threading.Thread(target=random_song.random_time)
-    random_song_thread.daemon = True  # 設為守護執行緒，主程式結束時自動結束
-    random_song_thread.start()
-
-    # 啟動語音偵測的執行緒
-    su_detect_thread = threading.Thread(target=su.start_super, args=(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"],))
-    su_detect_thread.daemon = True
-    su_detect_thread.start()
-
     root.mainloop()
