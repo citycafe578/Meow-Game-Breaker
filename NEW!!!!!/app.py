@@ -13,6 +13,17 @@ import queue
 import os
 import meow  # 新增這行
 
+class AudioManager:
+    def play_audio(self, priority, audio_path):
+        try:
+            audio = AudioSegment.from_file(audio_path)
+            samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+            sd.play(samples, samplerate=audio.frame_rate)
+            sd.wait()  # 等待音效播放完成
+            print(f"Playing audio: {audio_path}")
+        except Exception as e:
+            print(f"Error playing audio: {e}")
+
 class AudioApp:
     def __init__(self, root):
         self.root = root
@@ -71,10 +82,14 @@ class AudioApp:
             print(f"錯誤: 找不到音效檔案 {file_path}")
             return
 
-        audio = AudioSegment.from_file(file_path)
-        samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
-        self.sound_queue.put(samples)  # 將音效加入佇列
-        sd.play(samples, samplerate=audio.frame_rate)  # 在本地播放音效
+        try:
+            audio = AudioSegment.from_file(file_path)
+            samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+            self.sound_queue.put(samples)  # 將音效加入佇列
+            sd.play(samples, samplerate=audio.frame_rate)  # 在本地播放音效
+            print(f"播放音效: {file_path}")
+        except Exception as e:
+            print(f"播放音效時發生錯誤: {e}")
 
     def audio_callback(self, indata, outdata, frames, time, status):
         """ 音訊處理回呼函式，合併麥克風輸入與音效 """
@@ -121,9 +136,14 @@ class AudioApp:
         output_device_index = next(i for i, d in enumerate(sd.query_devices()) if d['name'] == output_device)
 
         try:
+            # 使用音訊檔案的取樣率
+            audio_path = "NEW!!!!!/sounds/1.mp3"  # 假設音訊檔案的取樣率是固定的
+            audio = AudioSegment.from_file(audio_path)
+            sample_rate = audio.frame_rate
+
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=4000,
+                samplerate=sample_rate,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
