@@ -2,6 +2,9 @@ import sounddevice as sd
 import numpy as np
 import time
 from pydub import AudioSegment
+from audio_manager import AudioManager
+
+audio_manager = AudioManager()
 
 # 設定參數
 FORMAT = 'int16'
@@ -17,10 +20,7 @@ def is_speaking(audio_data):
     return volume > SILENCE_THRESHOLD
 
 def play_sound():
-    audio = AudioSegment.from_file(MP3_FILE)
-    samples = np.array(audio.get_array_of_samples())
-    sd.play(samples, samplerate=audio.frame_rate)
-    sd.wait()
+    audio_manager.play_audio(priority=1, audio_path=MP3_FILE)
 
 def main():
     def callback(indata, frames, time, status):
