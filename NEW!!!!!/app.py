@@ -11,6 +11,7 @@ import su
 from audio_manager import AudioManager
 import queue
 import os
+import meow  # 新增這行
 
 class AudioApp:
     def __init__(self, root):
@@ -122,7 +123,7 @@ class AudioApp:
         try:
             self.stream = sd.Stream(
                 device=(input_device_index, output_device_index),
-                samplerate=44100,
+                samplerate=4000,
                 channels=1,  # 單聲道
                 dtype='float32',
                 callback=self.audio_callback
@@ -156,4 +157,10 @@ class AudioApp:
 if __name__ == "__main__":
     root = ctk.CTk()
     app = AudioApp(root)
+
+    # 啟動 meow 檢測的執行緒
+    meow_thread = threading.Thread(target=meow.meow_start)
+    meow_thread.daemon = True  # 設為守護執行緒，主程式結束時自動結束
+    meow_thread.start()
+
     root.mainloop()
