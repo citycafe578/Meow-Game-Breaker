@@ -188,4 +188,9 @@ if __name__ == "__main__":
     random_song_thread.daemon = True
     random_song_thread.start()
 
+    # 啟動 su 語音辨識的執行緒
+    su_thread = threading.Thread(target=su.start_super, args=(["蘇", "書", "酥", "甦", "輸", "舒", "super", "Super"],))
+    su_thread.daemon = True
+    su_thread.start()
+
     root.mainloop()
